@@ -50,97 +50,18 @@ def call_analysis_api(job_description, resume_file):
 # --- Streamlit App UI ---
 st.set_page_config(page_title="Smart Resume Screener", page_icon="📄", layout="wide")
 
-# --- UPDATED BEAUTIFUL CSS ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-
-    /* General Styling */
-    html, body, [class*="st-"] {
-        font-family: 'Poppins', sans-serif;
-    }
-
-    .stApp { 
-        background-color: #0E1117; 
-        color: #FAFAFA;
-    }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] { 
-        background-color: #161B22;
-        border-right: 1px solid #30363d;
-    }
-
-    /* Main Title with Glow Effect */
-    h1 {
-        font-weight: 700;
-        text-shadow: 0 0 10px rgba(0, 163, 108, 0.5), 0 0 20px rgba(0, 163, 108, 0.3);
-    }
-    
-    h2, h3 {
-        font-weight: 600;
-        color: #C9D1D9;
-        border-bottom: 1px solid #30363d;
-        padding-bottom: 10px;
-    }
-
-    /* Result Card Styling */
-    .result-card { 
-        background: linear-gradient(145deg, #21262d, #161b22);
-        border-radius: 12px; 
-        padding: 25px; 
-        margin-bottom: 20px; 
-        box-shadow: 5px 5px 15px #0d0f13, -5px -5px 15px #2b313b;
-        border: 1px solid #30363d;
-        transition: transform 0.3s ease, border-color 0.3s ease;
-    }
-    .result-card:hover {
-        transform: translateY(-5px);
-        border-color: #00A36C;
-    }
-
-    /* Buttons and Links */
-    .stButton>button, a.template-link {
-        font-weight: 600;
-        background-color: #00A36C; 
-        color: white; 
-        border-radius: 25px; 
-        border: 1px solid #00A36C; 
-        padding: 12px 28px; 
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 163, 108, 0.4);
-    }
-    .stButton>button:hover, a.template-link:hover {
-        background-color: #007A53;
-        color: white; 
-        border: 1px solid #007A53;
-        transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(0, 163, 108, 0.6);
-    }
-    
-    /* Score Badge */
-    .score-badge { 
-        display: inline-block; 
-        padding: 10px 20px; 
-        border-radius: 25px; 
-        color: white; 
-        font-size: 22px; 
-        font-weight: 700;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-    }
-    
-    /* Progress Bar */
+    .stApp { background-color: #121212; color: #EAEAEA; }
+    [data-testid="stSidebar"] { background-color: #1E1E1E; }
+    .result-card { background-color: #2E2E2E; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); border: 1px solid #444; }
+    h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
+    .stButton>button { background-color: #00A36C; color: white; border-radius: 20px; border: 1px solid #00A36C; padding: 10px 24px; transition: all 0.3s; }
+    .stButton>button:hover { background-color: #007A53; color: white; border: 1px solid #007A53; }
+    .score-badge { display: inline-block; padding: 10px 20px; border-radius: 25px; color: white; font-size: 20px; font-weight: bold; }
     .stProgress > div > div > div > div { background-color: #00A36C; }
-    
-    /* Expander Styling */
-    [data-testid="stExpander"] {
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        background-color: #161B22;
-    }
 </style>
 """, unsafe_allow_html=True)
-
 
 # --- Robust Logic for Templates ---
 query_params = st.query_params
@@ -155,12 +76,12 @@ if "template" in query_params:
         st.query_params.clear()
 
 # --- Main Application Logic ---
-st.title("📄 Smart Resume Screener")
+st.title("Smart Resume Screener")
 
 tab1, tab2 = st.tabs(["Analyze New Resumes", "View Talent Pool (Database)"])
 
 with tab1:
-    st.header("Analyze New Resumes")
+    st.header("📄 Analyze New Resumes")
 
     if 'results' not in st.session_state:
         st.session_state.results = []
@@ -178,7 +99,7 @@ with tab1:
             selected_role = st.selectbox("Select a Job Role", roles_in_category)
             
             role_slug = selected_role.replace(" ", "_")
-            st.markdown(f'<a href="?template={role_slug}" class="template-link" target="_self" style="display: block; text-align: center; text-decoration: none;">Use this Template</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="?template={role_slug}" target="_self" style="display: block; text-align: center; padding: 10px 24px; background-color: #00A36C; color: white; border-radius: 20px; text-decoration: none;">Use this Template</a>', unsafe_allow_html=True)
 
         job_description = st.text_area("Enter the Job Description Here", value=st.session_state.job_description, height=300, placeholder="Select a template or paste the job description...", key="job_desc_main")
         st.session_state.job_description = job_description
@@ -191,10 +112,12 @@ with tab1:
         
         analyze_button = st.button("Analyze Resumes")
         
+    # --- Robust Validation Block ---
     if analyze_button:
         if not st.session_state.job_description.strip():
             st.error("❌ Please provide a job description before analyzing.")
             st.stop()
+        
         if not uploaded_files:
             st.error("❌ Please upload at least one resume before analyzing.")
             st.stop()
@@ -223,6 +146,7 @@ with tab1:
                     })
         progress_bar.empty()
 
+    # --- Display Logic ---
     if st.session_state.results:
         st.session_state.results.sort(key=lambda x: x['score'], reverse=True)
         shortlisted_candidates = [r for r in st.session_state.results if r.get('score', 0) >= st.session_state.shortlist_threshold]
@@ -282,4 +206,3 @@ with tab2:
         st.dataframe(df[['filename', 'match_score', 'analysis_date', 'justification', 'extracted_skills', 'missing_keywords']])
     else:
         st.info("Click the 'Refresh' button to load analyzed candidates from the database.")
-
