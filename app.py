@@ -47,6 +47,21 @@ def call_analysis_api(job_description, resume_file):
         st.error(f"Connection Error: Could not connect to the backend API. It might be starting up. Please wait and try again. Error: {e}")
         return None
 
+# --- NEW: RELIABLE CALLBACK FUNCTION ---
+def apply_template():
+    """
+    This function is called when the 'Use this Template' button is clicked.
+    It reads the selected role and updates the job description in the session state.
+    This is the most reliable way to handle button clicks in Streamlit.
+    """
+    selected_role = st.session_state.role_select # Read the value from the selectbox's key
+    selected_job_details = next((job for job in jobs if job['role'] == selected_role), None)
+    if selected_job_details:
+        jd_text = (f"**Role:** {selected_job_details['role']}\n\n"
+                   f"**Description:** {selected_job_details['description']}\n\n"
+                   f"**Key Skills:**\n- " + "\n- ".join(selected_job_details['skills']))
+        st.session_state.job_description = jd_text
+
 # --- Streamlit App UI ---
 st.set_page_config(page_title="Smart Resume Screener", page_icon="📄", layout="wide")
 
@@ -63,17 +78,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Robust Logic for Templates ---
-query_params = st.query_params
-if "template" in query_params:
-    template_role = query_params["template"].replace("_", " ")
-    selected_job_details = next((job for job in jobs if job['role'] == template_role), None)
-    if selected_job_details:
-        jd_text = (f"**Role:** {selected_job_details['role']}\n\n"
-                   f"**Description:** {selected_job_details['description']}\n\n"
-                   f"**Key Skills:**\n- " + "\n- ".join(selected_job_details['skills']))
-        st.session_state.job_description = jd_text
-        st.query_params.clear()
 
 # --- Main Application Logic ---
 st.title("Smart Resume Screener")
@@ -94,16 +98,19 @@ with tab1:
         st.header("Controls")
         with st.expander("Use a Job Description Template", expanded=True):
             categories = sorted(list(set(job['category'] for job in jobs)))
-            selected_category = st.selectbox("Select a Job Category", categories)
-            roles_in_category = sorted([job['role'] for job in jobs if job['category'] == selected_category])
-            selected_role = st.selectbox("Select a Job Role", roles_in_category)
+            # We add a 'key' to each selectbox so we can read its value in the callback
+            selected_category = st.selectbox("Select a Job Category", categories, key="category_select")
             
-            role_slug = selected_role.replace(" ", "_")
-            st.markdown(f'<a href="?template={role_slug}" target="_self" style="display: block; text-align: center; padding: 10px 24px; background-color: #00A36C; color: white; border-radius: 20px; text-decoration: none;">Use this Template</a>', unsafe_allow_html=True)
+            roles_in_category = sorted([job['role'] for job in jobs if job['category'] == selected_category])
+            selected_role = st.selectbox("Select a Job Role", roles_in_category, key="role_select")
+            
+            # --- THIS IS THE BIG CHANGE ---
+            # We now use a standard st.button with the reliable on_click callback.
+            st.button("Use this Template", on_click=apply_template)
 
-        job_description = st.text_area("Enter the Job Description Here", value=st.session_state.job_description, height=300, placeholder="Select a template or paste the job description...", key="job_desc_main")
-        st.session_state.job_description = job_description
-
+        # This text_area will now be correctly updated by the callback function
+        job_description = st.text_area("Enter the Job Description Here", value=st.session_state.job_description, height=300, placeholder="Select a template and click the button above...", key="job_desc_main")
+        
         uploaded_files = st.file_uploader("Upload Resumes (PDF only)", type=["pdf"], accept_multiple_files=True)
         
         st.markdown("---")
@@ -114,7 +121,7 @@ with tab1:
         
     # --- Robust Validation Block ---
     if analyze_button:
-        if not st.session_state.job_description.strip():
+        if not job_description.strip():
             st.error("❌ Please provide a job description before analyzing.")
             st.stop()
         
@@ -122,7 +129,7 @@ with tab1:
             st.error("❌ Please upload at least one resume before analyzing.")
             st.stop()
             
-    if analyze_button and uploaded_files and st.session_state.job_description.strip():
+    if analyze_button and uploaded_files and job_description.strip():
         st.session_state.results = [] 
         total_files = len(uploaded_files)
         progress_bar = st.progress(0, text="Starting analysis...")
@@ -133,7 +140,7 @@ with tab1:
             progress_bar.progress((i + 1) / total_files, text=progress_text)
 
             with st.spinner(progress_text):
-                analysis = call_analysis_api(st.session_state.job_description, uploaded_file)
+                analysis = call_analysis_api(job_description, uploaded_file)
                 if analysis:
                     st.session_state.results.append({
                         "file_name": file_name,
