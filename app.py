@@ -4,9 +4,8 @@ import json
 import pandas as pd
 
 # --- Configuration ---
-# The URL of our backend API.
-# Since you will run both on your own computer, we use this local address.
-BASE_URL = "https://smart-resume-screener1.onrender.com/"
+# THIS IS THE FINAL, LIVE URL for your backend on Render.
+BASE_URL = "https://smart-resume-screener-u2zt.onrender.com"
 
 API_URL = f"{BASE_URL}/analyze"
 TALENT_POOL_URL = f"{BASE_URL}/resumes"
@@ -45,8 +44,8 @@ def call_analysis_api(job_description, resume_file):
         # 'data' is for other form fields
         data = {'job_description': job_description}
         
-        # Make the POST request to the backend
-        response = requests.post(API_URL, files=files, data=data)
+        # Make the POST request to the backend with a longer timeout for the live server
+        response = requests.post(API_URL, files=files, data=data, timeout=90)
         
         # Check if the request was successful
         if response.status_code == 200:
@@ -54,11 +53,8 @@ def call_analysis_api(job_description, resume_file):
         else:
             st.error(f"Error from API: {response.status_code} - {response.text}")
             return None
-    except requests.exceptions.ConnectionError:
-        st.error("Connection Error: Could not connect to the backend API. Is it running?")
-        return None
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Connection Error: Could not connect to the backend API. It might be starting up. Please wait and try again. Error: {e}")
         return None
 
 # --- Streamlit App UI ---
@@ -208,7 +204,7 @@ with tab2:
     
     if st.button("Refresh Data from Database"):
         try:
-            response = requests.get(TALENT_POOL_URL)
+            response = requests.get(TALENT_POOL_URL, timeout=30)
             if response.status_code == 200:
                 data = response.json()
                 st.session_state.talent_pool_data = data
