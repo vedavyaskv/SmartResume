@@ -3,16 +3,15 @@ import requests
 import json
 import pandas as pd
 
-# --- Configuration for LOCAL TESTING ---
-# This is the original URL that points to the backend running on your own computer.
-BASE_URL = "https://smartresume.onrender.com"
+# --- Configuration ---
+# THIS IS THE FINAL, LIVE URL for your backend on Render.
+BASE_URL = "https://smart-resume-screener-u2zt.onrender.com"
 
 API_URL = f"{BASE_URL}/analyze"
 TALENT_POOL_URL = f"{BASE_URL}/resumes"
 
 
 # --- Predefined Job Data ---
-# This remains in the frontend for the UI templates
 jobs = [
     { "category": "Software Development and Engineering", "role": "Frontend Developer", "description": "Create user interfaces and implement visual elements.", "skills": ["HTML", "CSS", "JavaScript", "React", "Angular", "Vue.js", "UI/UX", "Responsive Design"] },
     { "category": "Software Development and Engineering", "role": "Backend Developer", "description": "Build server-side logic and databases.", "skills": ["Python", "Java", "Node.js", "SQL", "APIs", "Django", "Flask", "Database Design"] },
@@ -35,23 +34,17 @@ jobs = [
 
 # --- API Communication Function ---
 def call_analysis_api(job_description, resume_file):
-    """
-    Sends the job description and resume file to the backend API for analysis.
-    """
     try:
         files = {'resume': (resume_file.name, resume_file.getvalue(), resume_file.type)}
         data = {'job_description': job_description}
-        
-        # Make the POST request to the backend
         response = requests.post(API_URL, files=files, data=data, timeout=90)
-        
         if response.status_code == 200:
             return response.json()
         else:
             st.error(f"Error from API: {response.status_code} - {response.text}")
             return None
     except requests.exceptions.RequestException as e:
-        st.error(f"Connection Error: Could not connect to the backend API. Is it running? Error: {e}")
+        st.error(f"Connection Error: Could not connect to the backend API. It might be starting up. Please wait and try again. Error: {e}")
         return None
 
 # --- Streamlit App UI ---
@@ -59,38 +52,33 @@ st.set_page_config(page_title="Smart Resume Screener", page_icon="📄", layout=
 
 st.markdown("""
 <style>
-    /* Main app background and text color for dark mode */
-    .stApp {
-        background-color: #121212; /* Dark background */
-        color: #EAEAEA;           /* Light text */
-    }
-    [data-testid="stSidebar"] {
-        background-color: #1E1E1E;
-    }
-    .result-card {
-        background-color: #2E2E2E; border-radius: 10px; padding: 20px;
-        margin-bottom: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-        border: 1px solid #444;
-    }
+    .stApp { background-color: #121212; color: #EAEAEA; }
+    [data-testid="stSidebar"] { background-color: #1E1E1E; }
+    .result-card { background-color: #2E2E2E; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); border: 1px solid #444; }
     h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
-    .stButton>button {
-        background-color: #00A36C; color: white; border-radius: 20px;
-        border: 1px solid #00A36C; padding: 10px 24px; transition: all 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #007A53; color: white; border: 1px solid #007A53;
-    }
-    .score-badge {
-        display: inline-block; padding: 10px 20px; border-radius: 25px;
-        color: white; font-size: 20px; font-weight: bold;
-    }
+    .stButton>button { background-color: #00A36C; color: white; border-radius: 20px; border: 1px solid #00A36C; padding: 10px 24px; transition: all 0.3s; }
+    .stButton>button:hover { background-color: #007A53; color: white; border: 1px solid #007A53; }
+    .score-badge { display: inline-block; padding: 10px 20px; border-radius: 25px; color: white; font-size: 20px; font-weight: bold; }
     .stProgress > div > div > div > div { background-color: #00A36C; }
 </style>
 """, unsafe_allow_html=True)
 
+# --- NEW ROBUST LOGIC FOR TEMPLATES ---
+# This code runs at the very start of the script.
+# It checks if the page URL has a "?template=..." parameter.
+query_params = st.query_params
+if "template" in query_params:
+    template_role = query_params["template"].replace("_", " ")
+    selected_job_details = next((job for job in jobs if job['role'] == template_role), None)
+    if selected_job_details:
+        jd_text = (f"**Role:** {selected_job_details['role']}\n\n"
+                   f"**Description:** {selected_job_details['description']}\n\n"
+                   f"**Key Skills:**\n- " + "\n- ".join(selected_job_details['skills']))
+        st.session_state.job_description = jd_text
+        # We clear the query param so it doesn't stick on the next button click
+        st.query_params.clear()
 
 # --- Main Application Logic ---
-
 st.title("Smart Resume Screener")
 
 tab1, tab2 = st.tabs(["Analyze New Resumes", "View Talent Pool (Database)"])
@@ -112,13 +100,12 @@ with tab1:
             selected_category = st.selectbox("Select a Job Category", categories)
             roles_in_category = sorted([job['role'] for job in jobs if job['category'] == selected_category])
             selected_role = st.selectbox("Select a Job Role", roles_in_category)
-            if st.button("Use this Template"):
-                selected_job_details = next((job for job in jobs if job['role'] == selected_role and job['category'] == selected_category), None)
-                if selected_job_details:
-                    jd_text = (f"**Role:** {selected_job_details['role']}\n\n"
-                               f"**Description:** {selected_job_details['description']}\n\n"
-                               f"**Key Skills:**\n- " + "\n- ".join(selected_job_details['skills']))
-                    st.session_state.job_description = jd_text
+            
+            # --- THIS IS THE BIG CHANGE ---
+            # Instead of a button, we create a special link that reloads the page.
+            # This is much more reliable on cloud platforms.
+            role_slug = selected_role.replace(" ", "_")
+            st.markdown(f'<a href="?template={role_slug}" target="_self" style="display: inline-block; padding: 10px 24px; background-color: #00A36C; color: white; border-radius: 20px; text-decoration: none;">Use this Template</a>', unsafe_allow_html=True)
 
         job_description = st.text_area("Enter the Job Description Here", value=st.session_state.job_description, height=300, placeholder="Select a template or paste the job description...", key="job_desc_main")
         st.session_state.job_description = job_description
@@ -211,11 +198,7 @@ with tab2:
 
     if 'talent_pool_data' in st.session_state and st.session_state.talent_pool_data:
         df = pd.DataFrame(st.session_state.talent_pool_data)
-        
-        st.dataframe(df[[
-            'filename', 'match_score', 'analysis_date', 
-            'justification', 'extracted_skills', 'missing_keywords'
-        ]])
+        st.dataframe(df[['filename', 'match_score', 'analysis_date', 'justification', 'extracted_skills', 'missing_keywords']])
     else:
         st.info("Click the 'Refresh' button to load analyzed candidates from the database.")
 
