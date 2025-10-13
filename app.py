@@ -50,22 +50,99 @@ def call_analysis_api(job_description, resume_file):
 # --- Streamlit App UI ---
 st.set_page_config(page_title="Smart Resume Screener", page_icon="📄", layout="wide")
 
+# --- UPDATED BEAUTIFUL CSS ---
 st.markdown("""
 <style>
-    .stApp { background-color: #121212; color: #EAEAEA; }
-    [data-testid="stSidebar"] { background-color: #1E1E1E; }
-    .result-card { background-color: #2E2E2E; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); border: 1px solid #444; }
-    h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
-    .stButton>button { background-color: #00A36C; color: white; border-radius: 20px; border: 1px solid #00A36C; padding: 10px 24px; transition: all 0.3s; }
-    .stButton>button:hover { background-color: #007A53; color: white; border: 1px solid #007A53; }
-    .score-badge { display: inline-block; padding: 10px 20px; border-radius: 25px; color: white; font-size: 20px; font-weight: bold; }
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+    /* General Styling */
+    html, body, [class*="st-"] {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .stApp { 
+        background-color: #0E1117; 
+        color: #FAFAFA;
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebar"] { 
+        background-color: #161B22;
+        border-right: 1px solid #30363d;
+    }
+
+    /* Main Title with Glow Effect */
+    h1 {
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(0, 163, 108, 0.5), 0 0 20px rgba(0, 163, 108, 0.3);
+    }
+    
+    h2, h3 {
+        font-weight: 600;
+        color: #C9D1D9;
+        border-bottom: 1px solid #30363d;
+        padding-bottom: 10px;
+    }
+
+    /* Result Card Styling */
+    .result-card { 
+        background: linear-gradient(145deg, #21262d, #161b22);
+        border-radius: 12px; 
+        padding: 25px; 
+        margin-bottom: 20px; 
+        box-shadow: 5px 5px 15px #0d0f13, -5px -5px 15px #2b313b;
+        border: 1px solid #30363d;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .result-card:hover {
+        transform: translateY(-5px);
+        border-color: #00A36C;
+    }
+
+    /* Buttons and Links */
+    .stButton>button, a.template-link {
+        font-weight: 600;
+        background-color: #00A36C; 
+        color: white; 
+        border-radius: 25px; 
+        border: 1px solid #00A36C; 
+        padding: 12px 28px; 
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 163, 108, 0.4);
+    }
+    .stButton>button:hover, a.template-link:hover {
+        background-color: #007A53;
+        color: white; 
+        border: 1px solid #007A53;
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(0, 163, 108, 0.6);
+    }
+    
+    /* Score Badge */
+    .score-badge { 
+        display: inline-block; 
+        padding: 10px 20px; 
+        border-radius: 25px; 
+        color: white; 
+        font-size: 22px; 
+        font-weight: 700;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    
+    /* Progress Bar */
     .stProgress > div > div > div > div { background-color: #00A36C; }
+    
+    /* Expander Styling */
+    [data-testid="stExpander"] {
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        background-color: #161B22;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- NEW ROBUST LOGIC FOR TEMPLATES ---
-# This code runs at the very start of the script.
-# It checks if the page URL has a "?template=..." parameter.
+
+# --- Robust Logic for Templates ---
 query_params = st.query_params
 if "template" in query_params:
     template_role = query_params["template"].replace("_", " ")
@@ -75,16 +152,15 @@ if "template" in query_params:
                    f"**Description:** {selected_job_details['description']}\n\n"
                    f"**Key Skills:**\n- " + "\n- ".join(selected_job_details['skills']))
         st.session_state.job_description = jd_text
-        # We clear the query param so it doesn't stick on the next button click
         st.query_params.clear()
 
 # --- Main Application Logic ---
-st.title("Smart Resume Screener")
+st.title("📄 Smart Resume Screener")
 
 tab1, tab2 = st.tabs(["Analyze New Resumes", "View Talent Pool (Database)"])
 
 with tab1:
-    st.header("📄 Analyze New Resumes")
+    st.header("Analyze New Resumes")
 
     if 'results' not in st.session_state:
         st.session_state.results = []
@@ -95,17 +171,14 @@ with tab1:
 
     with st.sidebar:
         st.header("Controls")
-        with st.expander("Use a Job Description Template"):
+        with st.expander("Use a Job Description Template", expanded=True):
             categories = sorted(list(set(job['category'] for job in jobs)))
             selected_category = st.selectbox("Select a Job Category", categories)
             roles_in_category = sorted([job['role'] for job in jobs if job['category'] == selected_category])
             selected_role = st.selectbox("Select a Job Role", roles_in_category)
             
-            # --- THIS IS THE BIG CHANGE ---
-            # Instead of a button, we create a special link that reloads the page.
-            # This is much more reliable on cloud platforms.
             role_slug = selected_role.replace(" ", "_")
-            st.markdown(f'<a href="?template={role_slug}" target="_self" style="display: inline-block; padding: 10px 24px; background-color: #00A36C; color: white; border-radius: 20px; text-decoration: none;">Use this Template</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="?template={role_slug}" class="template-link" target="_self" style="display: block; text-align: center; text-decoration: none;">Use this Template</a>', unsafe_allow_html=True)
 
         job_description = st.text_area("Enter the Job Description Here", value=st.session_state.job_description, height=300, placeholder="Select a template or paste the job description...", key="job_desc_main")
         st.session_state.job_description = job_description
@@ -117,8 +190,16 @@ with tab1:
         st.session_state.shortlist_threshold = st.number_input("Display candidates with score above:", min_value=0, max_value=100, value=st.session_state.shortlist_threshold, key='threshold_input')
         
         analyze_button = st.button("Analyze Resumes")
-
-    if analyze_button and uploaded_files and st.session_state.job_description:
+        
+    if analyze_button:
+        if not st.session_state.job_description.strip():
+            st.error("❌ Please provide a job description before analyzing.")
+            st.stop()
+        if not uploaded_files:
+            st.error("❌ Please upload at least one resume before analyzing.")
+            st.stop()
+            
+    if analyze_button and uploaded_files and st.session_state.job_description.strip():
         st.session_state.results = [] 
         total_files = len(uploaded_files)
         progress_bar = st.progress(0, text="Starting analysis...")
@@ -175,9 +256,9 @@ with tab1:
         
         elif st.session_state.results:
             st.warning(f"No candidates meet the score threshold of {st.session_state.shortlist_threshold}%. Try a lower score.")
-
-    elif analyze_button:
-        st.info("Processing... please wait.")
+    
+    elif not analyze_button:
+        st.info("Upload resumes and a job description, then click 'Analyze Resumes' to see the results here.")
 
 # --- Talent Pool Tab ---
 with tab2:
