@@ -5,7 +5,7 @@ import pandas as pd
 
 # --- Configuration for LOCAL TESTING ---
 # This is the original URL that points to the backend running on your own computer.
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = "https://smartresume.onrender.com"
 
 API_URL = f"{BASE_URL}/analyze"
 TALENT_POOL_URL = f"{BASE_URL}/resumes"
