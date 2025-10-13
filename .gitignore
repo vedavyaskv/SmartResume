@@ -1,0 +1,10 @@
+# Secret files - DO NOT UPLOAD!
+.env
+backend/.env
+.streamlit/
+
+# Python virtual environment
+venv/
+
+# Database file
+backend/resumes.db
