@@ -3,9 +3,9 @@ import requests
 import json
 import pandas as pd
 
-# --- Configuration ---
-# THIS IS THE FINAL, LIVE URL for your backend on Render.
-BASE_URL = "https://smart-resume-screener-u2zt.onrender.com"
+# --- Configuration for LOCAL TESTING ---
+# This is the original URL that points to the backend running on your own computer.
+BASE_URL = "http://127.0.0.1:5000"
 
 API_URL = f"{BASE_URL}/analyze"
 TALENT_POOL_URL = f"{BASE_URL}/resumes"
@@ -39,28 +39,24 @@ def call_analysis_api(job_description, resume_file):
     Sends the job description and resume file to the backend API for analysis.
     """
     try:
-        # 'files' is a dictionary for multipart/form-data encoding, which is how files are sent
         files = {'resume': (resume_file.name, resume_file.getvalue(), resume_file.type)}
-        # 'data' is for other form fields
         data = {'job_description': job_description}
         
-        # Make the POST request to the backend with a longer timeout for the live server
+        # Make the POST request to the backend
         response = requests.post(API_URL, files=files, data=data, timeout=90)
         
-        # Check if the request was successful
         if response.status_code == 200:
-            return response.json()  # Return the JSON analysis from the backend
+            return response.json()
         else:
             st.error(f"Error from API: {response.status_code} - {response.text}")
             return None
     except requests.exceptions.RequestException as e:
-        st.error(f"Connection Error: Could not connect to the backend API. It might be starting up. Please wait and try again. Error: {e}")
+        st.error(f"Connection Error: Could not connect to the backend API. Is it running? Error: {e}")
         return None
 
 # --- Streamlit App UI ---
 st.set_page_config(page_title="Smart Resume Screener", page_icon="📄", layout="wide")
 
-# (The CSS code is the same as before)
 st.markdown("""
 <style>
     /* Main app background and text color for dark mode */
@@ -95,13 +91,13 @@ st.markdown("""
 
 # --- Main Application Logic ---
 
-# Use tabs for different sections of the app
+st.title("Smart Resume Screener")
+
 tab1, tab2 = st.tabs(["Analyze New Resumes", "View Talent Pool (Database)"])
 
 with tab1:
     st.header("📄 Analyze New Resumes")
 
-    # Initialize session state for this tab
     if 'results' not in st.session_state:
         st.session_state.results = []
     if 'job_description' not in st.session_state:
@@ -146,7 +142,6 @@ with tab1:
             progress_bar.progress((i + 1) / total_files, text=progress_text)
 
             with st.spinner(progress_text):
-                # THIS IS THE BIG CHANGE: We call our backend API here!
                 analysis = call_analysis_api(st.session_state.job_description, uploaded_file)
                 if analysis:
                     st.session_state.results.append({
@@ -197,10 +192,10 @@ with tab1:
     elif analyze_button:
         st.info("Processing... please wait.")
 
-# --- NEW: Talent Pool Tab ---
+# --- Talent Pool Tab ---
 with tab2:
     st.header("🗂️ View Talent Pool (from Database)")
-    st.write("This section shows all resumes that have been previously analyzed and stored in the database via the backend.")
+    st.write("This section shows all resumes that have been previously analyzed and stored in the database.")
     
     if st.button("Refresh Data from Database"):
         try:
@@ -211,14 +206,12 @@ with tab2:
                 st.success(f"Successfully loaded {len(data)} records from the database!")
             else:
                 st.error(f"Failed to fetch data from API: {response.status_code}")
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             st.error("Connection Error: Could not connect to the backend API. Is it running?")
 
     if 'talent_pool_data' in st.session_state and st.session_state.talent_pool_data:
-        # Use pandas DataFrame for easy display
         df = pd.DataFrame(st.session_state.talent_pool_data)
         
-        # Display a searchable, sortable table
         st.dataframe(df[[
             'filename', 'match_score', 'analysis_date', 
             'justification', 'extracted_skills', 'missing_keywords'
