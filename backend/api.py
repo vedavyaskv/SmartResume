@@ -25,38 +25,31 @@ DATABASE = 'resumes.db'
 
 # --- Database Functions ---
 def get_db_connection():
-    # Render's file system can be ephemeral. For a real production app, you'd use a managed database
-    # or a persistent disk. For this project, we'll create the DB in the same directory.
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
-    with app.app_context():
-        db = get_db_connection()
-        cursor = db.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS analyses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filename TEXT NOT NULL,
-                job_description TEXT NOT NULL,
-                match_score INTEGER NOT NULL,
-                justification TEXT,
-                extracted_skills TEXT,
-                extracted_experience TEXT,
-                extracted_education TEXT,
-                missing_keywords TEXT,
-                analysis_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
-        db.commit()
-        db.close()
-        print("Database initialized.")
-
-# --- THIS IS THE CRITICAL FIX ---
-# Initialize the database when the application starts.
-# This code runs whether you use "python api.py" or Gunicorn on Render.
-init_db()
+    # This version is safer for production servers like Render
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS analyses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            job_description TEXT NOT NULL,
+            match_score INTEGER NOT NULL,
+            justification TEXT,
+            extracted_skills TEXT,
+            extracted_experience TEXT,
+            extracted_education TEXT,
+            missing_keywords TEXT,
+            analysis_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+    conn.close()
+    print("Database initialized.")
 
 # --- Helper Functions ---
 def extract_text_from_pdf(file_stream):
@@ -179,8 +172,15 @@ def get_all_resumes():
     except Exception as e:
         return jsonify({"error": f"Database fetch error: {e}"}), 500
 
+# This is called before the first request to the application
+@app.before_request
+def before_first_request_func():
+    init_db()
+
+
 # --- Main execution block for local testing ---
 if __name__ == '__main__':
     # When you run "python api.py", this block runs the test server.
     # Gunicorn ignores this block and just uses the 'app' object.
     app.run(host='0.0.0.0', port=5000, debug=True)
+
