@@ -51,7 +51,7 @@ def call_analysis_api(job_description, resume_file):
 def apply_template():
     """
     This function is called when the 'Use this Template' button is clicked.
-    It reads the selected role and updates the job description in the session state.
+    It reads the selected role from session state and updates the job description.
     This is the most reliable way to handle button clicks in Streamlit.
     """
     selected_role = st.session_state.role_select # Read the value from the selectbox's key
@@ -60,6 +60,7 @@ def apply_template():
         jd_text = (f"**Role:** {selected_job_details['role']}\n\n"
                    f"**Description:** {selected_job_details['description']}\n\n"
                    f"**Key Skills:**\n- " + "\n- ".join(selected_job_details['skills']))
+        # Update the session state, which will automatically update the text_area
         st.session_state.job_description = jd_text
 
 # --- Streamlit App UI ---
@@ -87,6 +88,7 @@ tab1, tab2 = st.tabs(["Analyze New Resumes", "View Talent Pool (Database)"])
 with tab1:
     st.header("📄 Analyze New Resumes")
 
+    # Initialize session state if they don't exist
     if 'results' not in st.session_state:
         st.session_state.results = []
     if 'job_description' not in st.session_state:
@@ -98,7 +100,7 @@ with tab1:
         st.header("Controls")
         with st.expander("Use a Job Description Template", expanded=True):
             categories = sorted(list(set(job['category'] for job in jobs)))
-            # We add a 'key' to each selectbox so we can read its value in the callback
+            # We add a 'key' to each selectbox so the callback can read its value
             selected_category = st.selectbox("Select a Job Category", categories, key="category_select")
             
             roles_in_category = sorted([job['role'] for job in jobs if job['category'] == selected_category])
@@ -106,9 +108,11 @@ with tab1:
             
             # --- THIS IS THE BIG CHANGE ---
             # We now use a standard st.button with the reliable on_click callback.
+            # When clicked, it will run the 'apply_template' function.
             st.button("Use this Template", on_click=apply_template)
 
-        # This text_area will now be correctly updated by the callback function
+        # This text_area's 'value' is linked to st.session_state.job_description.
+        # The callback function will update the session state, and this box will update automatically.
         job_description = st.text_area("Enter the Job Description Here", value=st.session_state.job_description, height=300, placeholder="Select a template and click the button above...", key="job_desc_main")
         
         uploaded_files = st.file_uploader("Upload Resumes (PDF only)", type=["pdf"], accept_multiple_files=True)
@@ -121,6 +125,7 @@ with tab1:
         
     # --- Robust Validation Block ---
     if analyze_button:
+        # We now read the value directly from the text_area widget
         if not job_description.strip():
             st.error("❌ Please provide a job description before analyzing.")
             st.stop()
