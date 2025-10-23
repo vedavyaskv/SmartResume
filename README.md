@@ -31,19 +31,19 @@ A system that automatically screens resumes and job descriptions using an LLM (L
 ```bash
 git clone https://github.com/Ruthiksmk/smartresume.git
 cd smartresume
+
 ---
 
 ## 🚀 Live Demo
-
 You can try the Smart Resume Screener app here:  
 👉 [Smart Resume Screener on Streamlit](https://smartresume-tbwzygpcczraimvzqnukx4.streamlit.app/)
 
 ---
 
 ## 🎥 Project Demo Video
-
 Watch the demo video here:  
 🎬 [Google Drive - Smart Resume Screener Demo](https://drive.google.com/file/d/1ip_CocD08kgIfMfOsvs84NkL7xg-NwU0/view?usp=sharing)
+
 
 ---
 
