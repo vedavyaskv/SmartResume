@@ -1,10 +1,15 @@
 # Secret files - DO NOT UPLOAD!
 .env
-backend/.env
 .streamlit/
 
 # Python virtual environment
 venv/
 
 # Database file
-backend/resumes.db
+resumes.db
+*.sqlite3
+
+# Other common Python files
+__pycache__/
+*.pyc".env" 
+"resumes.db" 
