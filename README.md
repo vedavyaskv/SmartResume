@@ -28,7 +28,7 @@ A system that automatically screens resumes and job descriptions using an LLM (L
 ## ⚙️ Setup Instructions
 
 ### 1️⃣ Clone or extract the project
-```bash
+
 git clone https://github.com/Ruthiksmk/smartresume.git
 cd smartresume
 
