@@ -13,3 +13,8 @@ resumes.db
 __pycache__/
 *.pyc".env" 
 "resumes.db" 
+backend/.env 
+backend/resumes.db 
+.env 
+resumes.db 
+git rm --cached backend/.env
