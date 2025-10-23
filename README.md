@@ -38,11 +38,11 @@ cd smartresume
 You can try the Smart Resume Screener app here:  
 👉 [Smart Resume Screener on Streamlit](https://smartresume-tbwzygpcczraimvzqnukx4.streamlit.app/)
 
+> ⚠️ *Note: If the app takes time to load or shows an error initially, please refresh the page once — Streamlit servers may sleep when inactive.*
 
 ## 🎥 Project Demo Video
 Watch the demo video here:  
 🎬 [Google Drive - Smart Resume Screener Demo](https://drive.google.com/file/d/1ip_CocD08kgIfMfOsvs84NkL7xg-NwU0/view?usp=sharing)
-
 
 
 
